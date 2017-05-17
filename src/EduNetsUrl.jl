@@ -1,6 +1,6 @@
-module Url
+module EduNetsUrl
 
-include("Url/Dataset.jl");
-include("Url/Model.jl");
+include("Dataset.jl");
+include("Model.jl");
 
 end
