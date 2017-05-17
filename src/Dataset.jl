@@ -39,7 +39,7 @@ function Dataset(features::Matrix, labels::Vector{Int}, urlIDs::Vector{Int}, url
 	domains = SortedSingleBagDataset(domainFeatures, bagLabels, domainBags);
 	paths = SortedSingleBagDataset(pathFeatures, bagLabels, pathBags);
 	queries = SortedSingleBagDataset(queryFeatures, bagLabels, queryBags);
-	UrlDataset(domains, paths, queries, bagLabels, DataFrames.DataFrame(url = bagInfo))
+	Dataset(domains, paths, queries, bagLabels, DataFrame(url = bagInfo))
 end
 
 #=
@@ -74,6 +74,6 @@ end
 
 function sample(dataset::Dataset, n::Vector{Int})
   classbagids = map(i->findn(dataset.labels .==i ), 1:maximum(dataset.labels));
-  indexes = mapreduce(i->sample(classbagids[i], minimum([length(classbagidsArray[i]), n[i]]); replace=false), append!, 1:min(length(classbagids), length(n)));
+  indexes = mapreduce(i->sample(classbagids[i], minimum([length(classbagids[i]), n[i]]); replace=false), append!, 1:min(length(classbagids), length(n)));
   return(getindex(dataset, indexes));
 end
