@@ -1,6 +1,6 @@
 import EduNets: AbstractModel, AbstractLoss, SoftmaxLayer, update!, model2vector!, model2vector, forward!, gradient!, fbackprop!, fgradient!;
 
-export Model, update!, model2vector!, model2vector, fgradient!;
+export Model, update!, model2vector!, model2vector, fgradient!, addsoftmax;
 
 type Model{A<:Tuple, B<:Tuple, C<:Tuple, D<:Tuple}<:AbstractModel
 	domainModel::A;
