@@ -1,9 +1,9 @@
 import Base: Operators.getindex, vcat;
-import EduNets: AbstractDataset, SortedSingleBagDataset, sample;
+import EduNets: AbstractDataset, SortedSingleBagDataset, sample, findranges;
 import StatsBase.sample;
 import DataFrames.DataFrame;
 
-export Dataset;
+export Dataset, getindex, vcat, sample;
 
 type Dataset{T<:AbstractFloat}<:AbstractDataset
 	domains::SortedSingleBagDataset{T}
@@ -70,6 +70,7 @@ end
 function getindex(dataset::Dataset, i::Int)::Dataset
 	getindex(dataset, [i])
 end
+=#
 
 function getindex(dataset::Dataset, indices::AbstractArray{Int})::Dataset
 	if size(dataset.info, 1) == 0
@@ -81,17 +82,18 @@ function getindex(dataset::Dataset, indices::AbstractArray{Int})::Dataset
 end
 
 function vcat(d1::Dataset,d2::Dataset)
-	Dataset(vcat(d1.domains,d2.domains), vcat(d1.paths,d2.paths), vcat(d1.queries,d2.queries), vcat(d1.y,d2.y), vcat(d1.info, d2.info))
+	Dataset(vcat(d1.domains,d2.domains), vcat(d1.paths,d2.paths), vcat(d1.queries,d2.queries), vcat(d1.labels,d2.labels), vcat(d1.info, d2.info))
 end
 
+#=
 function sample(ds::Dataset,n::Int64)
-  indexes=sample(1:length(ds.y),min(n,length(ds.y)),replace=false);
-  return(getindex(ds,indexes));
-end
-
-function sample(ds::Dataset,n::Array{Int64})
-  classbagids=map(i->findn(ds.y.==i),1:maximum(ds.y));
-  indexes=mapreduce(i->sample(classbagids[i],minimum([length(classbagids[i]),n[i]]);replace=false),append!,1:min(length(classbagids),length(n)));
+  indexes=sample(1:length(ds.labels),min(n,length(ds.labels)),replace=false);
   return(getindex(ds,indexes));
 end
 =#
+
+function sample(ds::Dataset,n::Array{Int64})
+  classbagids=map(i->findn(ds.labels.==i),1:maximum(ds.labels));
+  indexes=mapreduce(i->sample(classbagids[i],minimum([length(classbagids[i]),n[i]]);replace=false),append!,1:min(length(classbagids),length(n)));
+  return(getindex(ds,indexes));
+end
