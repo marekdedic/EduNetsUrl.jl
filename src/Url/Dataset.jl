@@ -1,6 +1,7 @@
 import Base: Operators.getindex, vcat;
-import EduNets.sample;
+import EduNets: AbstractDataset, SortedSingleBagDataset, sample;
 import StatsBase.sample;
+import DataFrames.DataFrame;
 
 export Dataset;
 
@@ -10,7 +11,7 @@ type Dataset{T<:AbstractFloat}<:AbstractDataset
 	queries::SortedSingleBagDataset{T}
 
 	labels::AbstractVector{Int}
-	info::DataFrames.DataFrame;
+	info::DataFrame;
 end
 
 function Dataset(features::Matrix, labels::Vector{Int}, urlIDs::Vector{Int}, urlParts::Vector{Int}; info::Vector{AbstractString} = Vector{AbstractString}(0), T::DataType = Float32)::Dataset
@@ -58,7 +59,7 @@ function Dataset(features::Matrix, labels::Vector{Int}, urlIDs::Vector{Int}, url
 	domains = SortedSingleBagDataset(hcat(domainFeatures...), bagLabels, bags);
 	paths = SortedSingleBagDataset(hcat(pathFeatures...), bagLabels, bags);
 	queries = SortedSingleBagDataset(hcat(queryFeatures...), bagLabels, bags);
-	Dataset(domains, paths, queries, bagLabels, convert(DataFrames.DataFrame, reshape(bagInfo, length(bagInfo), 1)))
+	Dataset(domains, paths, queries, bagLabels, convert(DataFrame, reshape(bagInfo, length(bagInfo), 1)))
 end
 
 #=
@@ -72,7 +73,7 @@ end
 
 function getindex(dataset::Dataset, indices::AbstractArray{Int})::Dataset
 	if size(dataset.info, 1) == 0
-		info = DataFrames.DataFrame(url = Vector{AbstractString}(0));
+		info = DataFrame(url = Vector{AbstractString}(0));
 	else
 		info = dataset.info[indices, :];
 	end

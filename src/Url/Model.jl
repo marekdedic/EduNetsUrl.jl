@@ -1,4 +1,4 @@
-import EduNets: update!, model2vector!, model2vector, project!, forward!, fgradient!;
+import EduNets: AbstractModel, update!, model2vector!, model2vector, project!, forward!, fgradient!;
 
 export Model;
 
