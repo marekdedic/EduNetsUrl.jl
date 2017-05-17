@@ -35,7 +35,7 @@ function next(iter::IterableParser, state::Int)::Tuple{Dataset, Int}
 		start = (state - 1) * iter.batchSize + 1;
 		stop = min(state * iter.batchSize, length(iter.labels));
 	end
-	dataset = processor(iter.urls[start:stop], iter.labels[start:stop]; featureCount = iter.featureCount, featureGenerator = iter.featureGenerator, T = iter.T);
+	dataset = iter.processor(iter.urls[start:stop], iter.labels[start:stop]; featureCount = iter.featureCount, featureGenerator = iter.featureGenerator, T = iter.T);
 	return (dataset, state + 1);
 end
 
@@ -48,5 +48,5 @@ end
 
 function sample(iter::IterableParser)
 	perm = sample(1:length(iter.urls), iter.batchSize);
-	return processor(iter.urls[perm], iter.labels[perm]; featureCount = iter.featureCount, featureGenerator = iter.featureGenerator, T = iter.T);
+	return iter.processor(iter.urls[perm], iter.labels[perm]; featureCount = iter.featureCount, featureGenerator = iter.featureGenerator, T = iter.T);
 end

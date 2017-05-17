@@ -1,18 +1,18 @@
 "HEX decoder"
 function decodeHEX(input::AbstractString)::AbstractString
-	input = input[5:end];
-	splitted = split(input, ":");
+	raw = input[5:end];
+	splitted = split(raw, ":");
 	raw = splitted[1];
 	splitted = splitted[2:end];
-	len = cld(length(input), 2);
-	outputVec = Vector{Char}(len + length(splitted));
-	for i in 1:len
+	outputVec = Vector{Char}(cld(length(raw), 2));
+	for i in 1:length(outputVec)
 		outputVec[i] = Char(parse(Int, raw[(2i - 1):2i], 16));
 	end
-	for i in 1:length(splitted)
-		outputVec[len + i] = splitted[i]
+	output = AbstractString(outputVec);
+	for i in splitted
+		output *= i;
 	end
-	return AbstractString(outputVec);
+	return output;
 end
 
 "Separates a given URL into 3 parts - domain, query, and path."
