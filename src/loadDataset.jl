@@ -1,5 +1,5 @@
 import GZip.open;
-import JSON.parse;
+import JSON;
 
 export loadUrl, loadThreatGrid;
 
@@ -7,7 +7,7 @@ function loadUrlsFromFile(file::AbstractString)::Vector{AbstractString}
 	output = Vector{AbstractString}(0);
 	open(file) do g
 		for line in eachline(g)
-			json = parse(line);
+			json = JSON.parse(line);
 			try
 				ohttp = json["ohttp"];						
 				if ohttp != nothing

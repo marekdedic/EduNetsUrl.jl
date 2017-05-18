@@ -1,11 +1,11 @@
-import JSON.parse;
+import JSON;
 
 export countingLabeller;
 
 function countingLabeller(file::AbstractString; threshold::Int = 5)::Int
 	positiveCount = 0;
 	open(file) do f
-		json = parse(f);
+		json = JSON.parse(f);
 		try
 			scans = json["scans"];
 			try
