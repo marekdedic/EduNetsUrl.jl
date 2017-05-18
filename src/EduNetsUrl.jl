@@ -1,10 +1,13 @@
 module EduNetsUrl
 
 include("Dataset.jl");
-include("Model.jl");
 include("IterableParser.jl");
+include("Model.jl");
 
-include("processDataset.jl");
 include("featureGenerators.jl");
+include("labellers.jl");
+
+include("loadDataset.jl");
+include("processDataset.jl");
 
 end
