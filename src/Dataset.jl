@@ -13,7 +13,7 @@ type Dataset{T<:AbstractFloat}<:AbstractDataset
 	info::DataFrame;
 end
 
-function Dataset(features::Matrix, labels::Vector{Int}, urlIDs::Vector{Int}, urlParts::Vector{Int}; info::Vector{AbstractString} = Vector{AbstractString}(0), T::DataType = Float32)::Dataset
+function Dataset{T<:AbstractFloat}(features::Matrix{T}, labels::Vector{Int}, urlIDs::Vector{Int}, urlParts::Vector{Int}; info::Vector{AbstractString} = Vector{AbstractString}(0))::Dataset
 	if(!issorted(urlIDs))
 		permutation = sortperm(urlIDs);
 		features = features[:, permutation];

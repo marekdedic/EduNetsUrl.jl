@@ -1,4 +1,4 @@
-export ngramFeatureGenerator, unigramFeatureGenerator, bigramFeatureGenerator, trigremFeatureGenerator;
+export ngramFeatureGenerator, unigramFeatureGenerator, bigramFeatureGenerator, trigramFeatureGenerator;
 
 "Generates an array of all the n-grams (substrings of length n) from a given string."
 function ngrams(input::AbstractString, n::Int)::Vector{AbstractString}

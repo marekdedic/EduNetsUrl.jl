@@ -32,7 +32,6 @@ function model2vector(model::Model)
 	vcat(model2vector(model.domainModel), model2vector(model.pathModel), model2vector(model.queryModel), model2vector(model.urlModel))
 end
 
-#=
 function project!(model::Model, dataset::Dataset)
 	od = forward!(model.domainModel, dataset.domains.x, (dataset.domains.bags,));
 	op = forward!(model.pathModel, dataset.paths.x, (dataset.paths.bags,));
@@ -64,7 +63,6 @@ function forward!(model::Model, dataset::Dataset)
 	oo = forward!(model.urlModel, o);
 	return oo;
 end
-=#
 
 function fgradient!(model::Model,loss::AbstractLoss, dataset::Dataset, g::Model)
 	od = forward!(model.domainModel, dataset.domains.x, (dataset.domains.bags,));
