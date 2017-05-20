@@ -1,16 +1,17 @@
 import Base: Operators.getindex, vcat;
-import EduNets: AbstractDataset, SortedSingleBagDataset, sample, findranges;
-import DataFrames.DataFrame;
+import EduNets.sample;
+import EduNets;
+import DataFrames;
 
 export Dataset, getindex, vcat, sample;
 
-type Dataset{T<:AbstractFloat}<:AbstractDataset
-	domains::SortedSingleBagDataset{T}
-	paths::SortedSingleBagDataset{T}
-	queries::SortedSingleBagDataset{T}
+type Dataset{T<:AbstractFloat}<:EduNets.AbstractDataset
+	domains::EduNets.SortedSingleBagDataset{T}
+	paths::EduNets.SortedSingleBagDataset{T}
+	queries::EduNets.SortedSingleBagDataset{T}
 
 	labels::Vector{Int}
-	info::DataFrame;
+	info::DataFrames.DataFrame;
 end
 
 function Dataset{T<:AbstractFloat}(features::Matrix{T}, labels::Vector{Int}, urlIDs::Vector{Int}, urlParts::Vector{Int}; info::Vector{AbstractString} = Vector{AbstractString}(0))::Dataset
@@ -26,9 +27,9 @@ function Dataset{T<:AbstractFloat}(features::Matrix{T}, labels::Vector{Int}, url
 	end
 
 	(domainFeatures, pathFeatures, queryFeatures) = map(i->features[:, urlParts .== i], 1:3);
-	(domainBags, pathBags, queryBags) = map(i->findranges(urlIDs[urlParts .== i]), 1:3);
+	(domainBags, pathBags, queryBags) = map(i->EduNets.findranges(urlIDs[urlParts .== i]), 1:3);
 
-	subbags = findranges(urlIDs);
+	subbags = EduNets.findranges(urlIDs);
 	bagLabels = map(b->maximum(labels[b]), subbags);
 	if size(info, 1) != 0;
 		bagInfo = map(b->info[b][1], subbags);
@@ -36,25 +37,19 @@ function Dataset{T<:AbstractFloat}(features::Matrix{T}, labels::Vector{Int}, url
 		bagInfo = Vector{AbstractString}(0);
 	end
 
-	domains = SortedSingleBagDataset(domainFeatures, bagLabels, domainBags);
-	paths = SortedSingleBagDataset(pathFeatures, bagLabels, pathBags);
-	queries = SortedSingleBagDataset(queryFeatures, bagLabels, queryBags);
-	Dataset(domains, paths, queries, bagLabels, DataFrame(url = bagInfo))
-end
-
-#=
-function featureSize(dataset::Dataset)::Int
-	size(dataset.domains.x, 1)
+	domains = EduNets.SortedSingleBagDataset(domainFeatures, bagLabels, domainBags);
+	paths = EduNets.SortedSingleBagDataset(pathFeatures, bagLabels, pathBags);
+	queries = EduNets.SortedSingleBagDataset(queryFeatures, bagLabels, queryBags);
+	Dataset(domains, paths, queries, bagLabels, DataFrames.DataFrame(url = bagInfo))
 end
 
 function getindex(dataset::Dataset, i::Int)::Dataset
-	getindex(dataset, [i])
+	return getindex(dataset, [i]);
 end
-=#
 
 function getindex(dataset::Dataset, indices::Vector{Int})::Dataset
 	if size(dataset.info, 1) == 0
-		info = DataFrame(url = Vector{AbstractString}(0));
+		info = DataFrames.DataFrame(url = Vector{AbstractString}(0));
 	else
 		info = dataset.info[indices, :];
 	end
@@ -65,15 +60,13 @@ function vcat(d1::Dataset,d2::Dataset)
 	Dataset(vcat(d1.domains,d2.domains), vcat(d1.paths,d2.paths), vcat(d1.queries,d2.queries), vcat(d1.labels,d2.labels), vcat(d1.info, d2.info))
 end
 
-#=
-function sample(dataset::Dataset,n::Int64)
-  indexes=sample(1:length(dataset.labels),min(n,length(dataset.labels)),replace=false);
-  return(getindex(dataset,indexes));
+function sample(dataset::Dataset, n::Int64)
+	indices = sample(1:length(dataset.labels), min(n, length(dataset.labels)), replace=false);
+	return getindex(dataset, indices);
 end
-=#
 
 function sample(dataset::Dataset, n::Vector{Int})
   classbagids = map(i->findn(dataset.labels .==i ), 1:maximum(dataset.labels));
-  indexes = mapreduce(i->sample(classbagids[i], minimum([length(classbagids[i]), n[i]]); replace=false), append!, 1:min(length(classbagids), length(n)));
-  return(getindex(dataset, indexes));
+  indices = mapreduce(i->sample(classbagids[i], minimum([length(classbagids[i]), n[i]]); replace=false), append!, 1:min(length(classbagids), length(n)));
+  return(getindex(dataset, indices));
 end

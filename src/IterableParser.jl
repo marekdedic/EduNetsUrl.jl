@@ -1,5 +1,5 @@
 import Base: start, next, done;
-import StatsBase.sample;
+import StatsBase;
 
 export IterableParser, start, next, done, sample;
 
@@ -47,6 +47,6 @@ function done(iter::IterableParser, state::Int)::Bool
 end
 
 function sample(iter::IterableParser)
-	perm = sample(1:length(iter.urls), iter.batchSize);
+	perm = StatsBase.sample(1:length(iter.urls), iter.batchSize);
 	return iter.processor(iter.urls[perm], iter.labels[perm]; featureCount = iter.featureCount, featureGenerator = iter.featureGenerator, T = iter.T);
 end

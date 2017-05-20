@@ -1,8 +1,9 @@
-import EduNets: AbstractModel, AbstractLoss, SoftmaxLayer, update!, model2vector!, model2vector, forward!, gradient!, fbackprop!, fgradient!;
+import EduNets: update!, model2vector!, model2vector, project!, forward!, gradient!, fgradient!;
+import EduNets;
 
-export Model, update!, model2vector!, model2vector, fgradient!, addsoftmax;
+export Model, update!, model2vector!, model2vector, project!, forward!, fgradient!, addsoftmax;
 
-type Model{A<:Tuple, B<:Tuple, C<:Tuple, D<:Tuple}<:AbstractModel
+type Model{A<:Tuple, B<:Tuple, C<:Tuple, D<:Tuple}<:EduNets.AbstractModel
 	domainModel::A;
 	pathModel::B;
 	queryModel::C;
@@ -64,7 +65,7 @@ function forward!(model::Model, dataset::Dataset)
 	return oo;
 end
 
-function fgradient!(model::Model,loss::AbstractLoss, dataset::Dataset, g::Model)
+function fgradient!(model::Model,loss::EduNets.AbstractLoss, dataset::Dataset, g::Model)
 	od = forward!(model.domainModel, dataset.domains.x, (dataset.domains.bags,));
 	op = forward!(model.pathModel, dataset.paths.x, (dataset.paths.bags,));
 	oq = forward!(model.queryModel, dataset.queries.x, (dataset.queries.bags,));
@@ -79,22 +80,22 @@ function fgradient!(model::Model,loss::AbstractLoss, dataset::Dataset, g::Model)
 	oo = forward!(model.urlModel, o);
 	(f, goo) = gradient!(loss, oo[end], dataset.labels); #calculate the gradient of the loss function 
 
-	(f1,go)=fbackprop!(model.urlModel,oo, goo, g.urlModel);
+	(f1, go) = EduNets.fbackprop!(model.urlModel, oo, goo, g.urlModel);
 
 	dsize = size(model.domainModel[end], 1);
 	psize = size(model.pathModel[end], 1);
 	qsize = size(model.queryModel[end], 1);
 
-	god = view(go, 1:dsize,:);
-	gop = view(go, dsize + 1:dsize + psize,:);
-	goq = view(go, dsize + psize + 1:dsize + psize + qsize,:);
+	god = view(go, 1:dsize, :);
+	gop = view(go, dsize + 1:dsize + psize, :);
+	goq = view(go, dsize + psize + 1:dsize + psize + qsize, :);
 
-	f2=fgradient!(model.domainModel, od, (dataset.domains.bags,), god, g.domainModel);
-	f3=fgradient!(model.pathModel, op, (dataset.paths.bags,), gop, g.pathModel);
-	f4=fgradient!(model.queryModel, oq, (dataset.queries.bags,), goq, g.queryModel);
-	return f+f1+f2+f3+f4;
+	f2 = fgradient!(model.domainModel, od, (dataset.domains.bags,), god, g.domainModel);
+	f3 = fgradient!(model.pathModel, op, (dataset.paths.bags,), gop, g.pathModel);
+	f4 = fgradient!(model.queryModel, oq, (dataset.queries.bags,), goq, g.queryModel);
+	return f + f1 + f2 + f3 + f4;
 end
 
-function addsoftmax(model::Model,T)
-	Model(model.domainModel, model.pathModel, model.queryModel, (model.urlModel...,SoftmaxLayer(size(model.urlModel[end], 2), T = T)))
+function addsoftmax(model::Model; T::DataType = Float32)
+	return Model(model.domainModel, model.pathModel, model.queryModel, (model.urlModel..., EduNets.SoftmaxLayer(size(model.urlModel[end], 2), T = T)));
 end

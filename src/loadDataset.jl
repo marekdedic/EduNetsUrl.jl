@@ -1,11 +1,11 @@
-import GZip.open;
+import GZip;
 import JSON;
 
 export loadUrl, loadThreatGrid;
 
 function loadUrlsFromFile(file::AbstractString)::Vector{AbstractString}
 	output = Vector{AbstractString}(0);
-	open(file) do g
+	GZip.open(file) do g
 		for line in eachline(g)
 			json = JSON.parse(line);
 			try
