@@ -21,7 +21,7 @@ function loadUrlsFromFile(file::AbstractString)::Vector{AbstractString}
 end							
 
 function loadUrl(file::AbstractString; batchSize::Int = 6000, featureCount::Int = 2053, featureGenerator::Function = trigramFeatureGenerator, parallel::Bool = false, T::DataType = Float32)::IterableParser
-	open(file, "r") do fid
+	GZip.open(file, "r") do fid
 		table = readcsv(fid);
 	end
 
