@@ -10,7 +10,7 @@ type Dataset{T<:AbstractFloat}<:EduNets.AbstractDataset
 	paths::EduNets.SortedSingleBagDataset{T}
 	queries::EduNets.SortedSingleBagDataset{T}
 
-	labels::Vector{Int}
+	y::Vector{Int}
 	info::DataFrames.DataFrame;
 end
 
@@ -53,20 +53,20 @@ function getindex(dataset::Dataset, indices::Vector{Int})::Dataset
 	else
 		info = dataset.info[indices, :];
 	end
-	Dataset(dataset.domains[indices], dataset.paths[indices], dataset.queries[indices], dataset.labels[indices], info)
+	Dataset(dataset.domains[indices], dataset.paths[indices], dataset.queries[indices], dataset.y[indices], info)
 end
 
 function vcat(d1::Dataset,d2::Dataset)
-	Dataset(vcat(d1.domains,d2.domains), vcat(d1.paths,d2.paths), vcat(d1.queries,d2.queries), vcat(d1.labels,d2.labels), vcat(d1.info, d2.info))
+	Dataset(vcat(d1.domains,d2.domains), vcat(d1.paths,d2.paths), vcat(d1.queries,d2.queries), vcat(d1.y,d2.y), vcat(d1.info, d2.info))
 end
 
 function sample(dataset::Dataset, n::Int64)
-	indices = sample(1:length(dataset.labels), min(n, length(dataset.labels)), replace=false);
+	indices = sample(1:length(dataset.y), min(n, length(dataset.y)), replace=false);
 	return getindex(dataset, indices);
 end
 
 function sample(dataset::Dataset, n::Vector{Int})
-  classbagids = map(i->findn(dataset.labels .==i ), 1:maximum(dataset.labels));
+  classbagids = map(i->findn(dataset.y .==i ), 1:maximum(dataset.y));
   indices = mapreduce(i->sample(classbagids[i], minimum([length(classbagids[i]), n[i]]); replace=false), append!, 1:min(length(classbagids), length(n)));
   return(getindex(dataset, indices));
 end

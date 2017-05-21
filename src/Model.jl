@@ -78,7 +78,7 @@ function fgradient!(model::Model,loss::EduNets.AbstractLoss, dataset::Dataset, g
 	o[dsize + psize + 1:end, :] = oq[end];
 
 	oo = forward!(model.urlModel, o);
-	(f, goo) = gradient!(loss, oo[end], dataset.labels); #calculate the gradient of the loss function 
+	(f, goo) = gradient!(loss, oo[end], dataset.y); #calculate the gradient of the loss function 
 
 	(f1, go) = EduNets.fbackprop!(model.urlModel, oo, goo, g.urlModel);
 
