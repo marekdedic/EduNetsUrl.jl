@@ -8,7 +8,7 @@ type ModelCache{A<:AbstractFloat}
 end
 
 function ModelCache(; T::DataType = Float32)::ModelCache
-	return ModelCache(StridedMatrix{T}(0));
+	return ModelCache(Matrix{T}(0, 0));
 end
 
 type Model{A<:Tuple, B<:Tuple, C<:Tuple, D<:Tuple}<:EduNets.AbstractModel
@@ -52,7 +52,7 @@ function project!(model::Model, dataset::Dataset)
 	size2 = size(od[end], 2);
 
 	if (size(model.cache.partOutput, 1) < size1 ) || (size(model.cache.partOutput, 2) < size2)
-		model.cache.partOutput = StridedMatrix{Float32}(size1, size2);
+		model.cache.partOutput = Matrix{Float32}(size1, size2);
 	end
 
 	dsize = size(od[end], 1);
@@ -75,7 +75,7 @@ function forward!(model::Model, dataset::Dataset)
 	size2 = size(od[end], 2);
 
 	if (size(model.cache.partOutput, 1) < size1 ) || (size(model.cache.partOutput, 2) < size2)
-		model.cache.partOutput = StridedMatrix{Float32}(size1, size2);
+		model.cache.partOutput = Matrix{Float32}(size1, size2);
 	end
 
 	dsize = size(od[end], 1);
@@ -98,7 +98,7 @@ function fgradient!(model::Model,loss::EduNets.AbstractLoss, dataset::Dataset, g
 	size2 = size(od[end], 2);
 
 	if (size(model.cache.partOutput, 1) < size1 ) || (size(model.cache.partOutput, 2) < size2)
-		model.cache.partOutput = StridedMatrix{Float32}(size1, size2);
+		model.cache.partOutput = Matrix{Float32}(size1, size2);
 	end
 
 	dsize = size(od[end], 1);
@@ -108,7 +108,7 @@ function fgradient!(model::Model,loss::EduNets.AbstractLoss, dataset::Dataset, g
 	model.cache.partOutput[dsize + 1:dsize + psize, 1:size2] = op[end];
 	model.cache.partOutput[dsize + psize + 1:end, 1:size2] = oq[end];
 
-	oo = forward!(model.urlmodel, model.cache.partOutput[1:size1, 1:size2]);
+	oo = forward!(model.urlModel, model.cache.partOutput[1:size1, 1:size2]);
 
 	(f, goo) = gradient!(loss, oo[end], dataset.y); #calculate the gradient of the loss function 
 
