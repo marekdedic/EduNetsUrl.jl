@@ -3,15 +3,25 @@ import EduNets;
 
 export Model, update!, model2vector!, model2vector, project!, forward!, fgradient!, addsoftmax;
 
+type ModelCache{A<:AbstractFloat}
+	partOutput::StridedMatrix{A};
+end
+
+function ModelCache(; T::DataType = Float32)::ModelCache
+	return ModelCache(StridedMatrix{T}(0));
+end
+
 type Model{A<:Tuple, B<:Tuple, C<:Tuple, D<:Tuple}<:EduNets.AbstractModel
 	domainModel::A;
 	pathModel::B;
 	queryModel::C;
 	urlModel::D;
+
+	cache::ModelCache;
 end
 
-function Model(domainModel::Tuple, pathModel::Tuple, queryModel::Tuple, urlModel::Tuple)
-	Model(domainModel, pathModel, queryModel, urlModel);
+function Model(domainModel::Tuple, pathModel::Tuple, queryModel::Tuple, urlModel::Tuple; T::DataType = Float32)
+	return Model(domainModel, pathModel, queryModel, urlModel, ModelCache(; T = T));
 end
 
 # update = vector2model
@@ -30,7 +40,7 @@ function model2vector!(model::Model, theta::Vector; offset::Int = 1)
 end
 
 function model2vector(model::Model)
-	vcat(model2vector(model.domainModel), model2vector(model.pathModel), model2vector(model.queryModel), model2vector(model.urlModel))
+	return vcat(model2vector(model.domainModel), model2vector(model.pathModel), model2vector(model.queryModel), model2vector(model.urlModel));
 end
 
 function project!(model::Model, dataset::Dataset)
@@ -38,14 +48,21 @@ function project!(model::Model, dataset::Dataset)
 	op = forward!(model.pathModel, dataset.paths.x, (dataset.paths.bags,));
 	oq = forward!(model.queryModel, dataset.queries.x, (dataset.queries.bags,));
 
-	o::StridedMatrix = Matrix{Float32}(size(od[end], 1) + size(op[end], 1) + size(oq[end], 1), size(od[end], 2))
+	size1 = size(od[end], 1) + size(op[end], 1) + size(oq[end], 1);
+	size2 = size(od[end], 2);
+
+	if (size(model.cache.partOutput, 1) < size1 ) || (size(model.cache.partOutput, 2) < size2)
+		model.cache.partOutput = StridedMatrix{Float32}(size1, size2);
+	end
+
 	dsize = size(od[end], 1);
 	psize = size(op[end], 1);
-	o[1:dsize, :] = od[end];
-	o[dsize + 1:dsize + psize, :] = op[end];
-	o[dsize + psize + 1:end, :] = oq[end];
 
-	oo = forward!(model.urlModel, o)[end];
+	model.cache.partOutput[1:dsize, 1:size2] = od[end];
+	model.cache.partOutput[dsize + 1:dsize + psize, 1:size2] = op[end];
+	model.cache.partOutput[dsize + psize + 1:size1, 1:size2] = oq[end];
+
+	oo = forward!(model.urlModel, model.cache.partOutput[1:size1, 1:size2])[end];
 	return oo;
 end
 
@@ -54,14 +71,21 @@ function forward!(model::Model, dataset::Dataset)
 	op = forward!(model.pathModel, dataset.paths.x, (dataset.paths.bags,));
 	oq = forward!(model.queryModel, dataset.queries.x, (dataset.queries.bags,));
 
-	o::StridedMatrix = Matrix{Float32}(size(od[end], 1) + size(op[end], 1) + size(oq[end], 1), size(od[end], 2))
+	size1 = size(od[end], 1) + size(op[end], 1) + size(oq[end], 1);
+	size2 = size(od[end], 2);
+
+	if (size(model.cache.partOutput, 1) < size1 ) || (size(model.cache.partOutput, 2) < size2)
+		model.cache.partOutput = StridedMatrix{Float32}(size1, size2);
+	end
+
 	dsize = size(od[end], 1);
 	psize = size(op[end], 1);
-	o[1:dsize, :] = od[end];
-	o[dsize + 1:dsize + psize, :] = op[end];
-	o[dsize + psize + 1:end, :] = oq[end];
 
-	oo = forward!(model.urlModel, o);
+	model.cache.partOutput[1:dsize, 1:size2] = od[end];
+	model.cache.partOutput[dsize + 1:dsize + psize, 1:size2] = op[end];
+	model.cache.partOutput[dsize + psize + 1:size1, 1:size2] = oq[end];
+
+	oo = forward!(model.urlmodel, model.cache.partOutput[1:size1, 1:size2]);
 	return oo;
 end
 
@@ -70,14 +94,22 @@ function fgradient!(model::Model,loss::EduNets.AbstractLoss, dataset::Dataset, g
 	op = forward!(model.pathModel, dataset.paths.x, (dataset.paths.bags,));
 	oq = forward!(model.queryModel, dataset.queries.x, (dataset.queries.bags,));
 
-	o::StridedMatrix = Matrix{Float32}(size(od[end], 1) + size(op[end], 1) + size(oq[end], 1), size(od[end], 2))
+	size1 = size(od[end], 1) + size(op[end], 1) + size(oq[end], 1);
+	size2 = size(od[end], 2);
+
+	if (size(model.cache.partOutput, 1) < size1 ) || (size(model.cache.partOutput, 2) < size2)
+		model.cache.partOutput = StridedMatrix{Float32}(size1, size2);
+	end
+
 	dsize = size(od[end], 1);
 	psize = size(op[end], 1);
-	o[1:dsize, :] = od[end];
-	o[dsize + 1:dsize + psize, :] = op[end];
-	o[dsize + psize + 1:end, :] = oq[end];
 
-	oo = forward!(model.urlModel, o);
+	model.cache.partOutput[1:dsize, 1:size2] = od[end];
+	model.cache.partOutput[dsize + 1:dsize + psize, 1:size2] = op[end];
+	model.cache.partOutput[dsize + psize + 1:end, 1:size2] = oq[end];
+
+	oo = forward!(model.urlmodel, model.cache.partOutput[1:size1, 1:size2]);
+
 	(f, goo) = gradient!(loss, oo[end], dataset.y); #calculate the gradient of the loss function 
 
 	(f1, go) = EduNets.fbackprop!(model.urlModel, oo, goo, g.urlModel);
