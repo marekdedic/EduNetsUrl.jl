@@ -52,36 +52,67 @@ function separateUrl(url::AbstractString)::Tuple{Vector{AbstractString}, Vector{
 	return (domain, path, query);
 end
 
+# Adds the vector v to a column of matrix a. If a is not of a sufficient size, it is extended
+function addcolumn!(a::AbstractMatrix, v::AbstractVector, index::Int; step::Int = 1000)
+	if size(a, 2) < index
+		b = zeros(eltype(a), max(size(a, 1), length(v)), index + step);
+		println("resizing $(size(a)) to $(size(b))");
+		if !isempty(a)
+			b[1:size(a, 1), 1:size(a, 2)] = a;
+		end
+		a = b;
+	end
+	a[:, index] = v;
+	return a;
+end
+
+# Adds the vector v to a column of matrix a. If a is not of a sufficient size, it is extended
+function additem!(a::AbstractVector, v, index::Int; step::Int = 1000)
+	if length(a) < index
+		b = zeros(eltype(a), index + step);
+		if !isempty(a)
+			b[1:length(a)] = a;
+		end
+		a = b;
+	end
+	a[index] = v;
+	return a;
+end
+
 function processDataset(urls::Vector{AbstractString}, labels::Vector{Int}; featureCount::Int = 2053, featureGenerator::Function = trigramFeatureGenerator, T::DataType = Float32)::Dataset
-	features = Vector{Vector{T}}(0);
-	processedLabels = Vector{Int}(0);
-	bags = Vector{Int}(0);
-	urlParts = Vector{Int}(0);
+	features = zeros(T,featureCount,8*length(urls))
+	processedLabels = zeros(Int,8*length(urls));
+	bags = zeros(Int,8*length(urls));
+	urlParts = zeros(Int,8*length(urls));
 	info = Vector{AbstractString}(0);
+	freeidx=1;
 
 	for j in 1:size(labels, 1)
 		(domain, path, query) = separateUrl(urls[j]);
 		for i in domain
-			push!(features, featureGenerator(i, featureCount; T = T));
-			push!(processedLabels, labels[j]);
-			push!(bags, j);
-			push!(urlParts, 1);
+			features = addcolumn!(features, featureGenerator(i, featureCount; T = T), freeidx, step = (div(freeidx, j) + 1) * (length(labels) - j + 1) + 1000);
+			processedLabels = additem!(processedLabels, labels[j], freeidx, step = (div(freeidx, j) + 1) * (length(labels) - j + 1) + 1000);
+			bags = additem!(bags, j, freeidx, step = (div(freeidx, j) + 1) * (length(labels) - j + 1) + 1000);
+			urlParts = additem!(urlParts, 1, freeidx, step = (div(freeidx, j) + 1) * (length(labels) - j + 1) + 1000);
+			freeidx += 1;
 			push!(info, urls[j]);
 		end
 		for i in path
-			push!(features, featureGenerator(i, featureCount; T = T));
-			push!(processedLabels, labels[j]);
-			push!(bags, j);
-			push!(urlParts, 2);
+			features = addcolumn!(features, featureGenerator(i, featureCount; T = T), freeidx, step = (div(freeidx, j) + 1) * (length(labels) - j + 1) + 1000);
+			processedLabels = additem!(processedLabels, labels[j], freeidx, step = (div(freeidx, j) + 1) * (length(labels) - j + 1) + 1000);
+			bags = additem!(bags, j, freeidx, step = (div(freeidx, j) + 1) * (length(labels) - j + 1) + 1000);
+			urlParts = additem!(urlParts, 2, freeidx, step = (div(freeidx, j) + 1) * (length(labels) - j + 1) + 1000);
 			push!(info, urls[j]);
+			freeidx += 1;
 		end
 		for i in query
-			push!(features, featureGenerator(i, featureCount; T = T));
-			push!(processedLabels, labels[j]);
-			push!(bags, j);
-			push!(urlParts, 3);
+			features = addcolumn!(features, featureGenerator(i, featureCount; T = T), freeidx, step = (div(freeidx, j) + 1) * (length(labels) - j + 1) + 1000);
+			processedLabels = additem!(processedLabels, labels[j], freeidx, step = (div(freeidx, j) + 1) * (length(labels) - j + 1) + 1000);
+			bags = additem!(bags, j, freeidx, step = (div(freeidx, j) + 1) * (length(labels) - j + 1) + 1000);
+			urlParts = additem!(urlParts, 3, freeidx, step = (div(freeidx, j) + 1) * (length(labels)  - j + 1) + 1000);
 			push!(info, urls[j]);
+			freeidx += 1;
 		end
 	end
-	return Dataset(hcat(features...), processedLabels, bags, urlParts; info = info);
+	return Dataset(features[:, 1:freeidx - 1], processedLabels[1:freeidx - 1], bags[1:freeidx - 1], urlParts[1:freeidx - 1]; info = info);
 end
