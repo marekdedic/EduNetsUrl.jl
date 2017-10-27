@@ -3,16 +3,19 @@ export ngramFeatureGenerator, unigramFeatureGenerator, bigramFeatureGenerator, t
 "Generates an array of all the n-grams (substrings of length n) from a given string."
 function ngrams(input::AbstractString, n::Int)::Vector{AbstractString}
 	output = Vector{AbstractString}(max(length(input) - n + 1, 0));
-	indices = Vector{Int}(length(input));
 	i = 1;
 	j = 1;
-	while i <= endof(input)
-		indices[j] = i;
-		i = nextind(input, i);
+	start = 1;
+	stop = 1;
+	while stop <= endof(input) && (j<n)
+		stop = nextind(input,stop)
 		j += 1;
 	end
-	for i in 1:length(output)
-		output[i] = input[indices[i]:indices[i + n - 1]];
+
+	while start <= endof(input)
+		output[i] = input[start:min(stop,endof(input))];
+		stop,start = nextind(input,stop),nextind(input,start)
+i += 1
 	end
 	return output;
 end
